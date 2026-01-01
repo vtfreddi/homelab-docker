@@ -1,0 +1,189 @@
+services:
+  # Service 1: Portainer (Docker Management)
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./data/portainer_data:/data
+    ports:
+      - 9000:9000
+
+  # Service 2: AdGuard Home (DNS & Ad Blocking)
+  adguard:
+    image: adguard/adguardhome
+    container_name: adguard
+    restart: unless-stopped
+    volumes:
+      - ./data/adguard_work:/opt/adguardhome/work
+      - ./config/adguard_conf:/opt/adguardhome/conf
+    ports:
+      - 53:53/tcp
+      - 53:53/udp
+      - 3000:3000/tcp # Setup Dashboard
+      - 8080:8080/tcp   # Web Interface
+
+  # Service 3: Homepage (Your Dashboard)
+  homepage:
+    image: ghcr.io/gethomepage/homepage:latest
+    container_name: homepage
+    env_file:
+      - .env
+    restart: unless-stopped
+    environment:
+      - HOMEPAGE_ALLOWED_HOSTS=*
+    volumes:
+      - ./config/homepage_config:/app/config
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - 8085:3000
+    links:
+      - authentik_server
+
+  # Service 4: Nginx Network Proxy Manager
+  npm:
+    image: 'jc21/nginx-proxy-manager:latest'
+    container_name: npm
+    restart: unless-stopped
+    ports:
+      - '80:80'     # Public HTTP (The new Front Door)
+      - '81:81'     # Admin Interface (Where you configure rules)
+      - '443:443'   # Public HTTPS (SSL)
+    volumes:
+      - ./data/npm:/data
+      - ./config/npm:/etc/letsencrypt
+
+  # Service 5: Uptime Kuma (Network Monitor)
+  uptime-kuma:
+    image: louislam/uptime-kuma:1
+    container_name: uptime-kuma
+    restart: unless-stopped
+    volumes:
+      - ./data/uptime-kuma:/app/data
+    ports:
+      - 3001:3001
+
+# Service 6: Smokeping (Network Graphs)
+  smokeping:
+    image: lscr.io/linuxserver/smokeping:latest
+    container_name: smokeping
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/New_York  # Change to your timezone
+    volumes:
+      - ./config/smokeping:/config
+      - ./data/smokeping:/data
+    ports:
+      - 8095:80
+    restart: unless-stopped
+
+# Service 7: Authentik IAM
+
+  authentik_postgresql:
+    image: docker.io/library/postgres:16-alpine
+    healthcheck: # The "Why": Ensures the DB is actually ready before Authentik starts
+      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      start_period: 20s
+      interval: 30s
+      retries: 5
+    volumes:
+      - ./data/authentik/database:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: ${PG_PASS}
+      POSTGRES_USER: ${PG_USER}
+      POSTGRES_DB: ${PG_DB}
+    networks:
+      - authentik-internal
+
+  authentik_server:
+    image: ghcr.io/goauthentik/server:2025.10.3
+    command: server
+    environment:
+      AUTHENTIK_POSTGRESQL__HOST: authentik_postgresql
+      AUTHENTIK_POSTGRESQL__USER: ${PG_USER}
+      AUTHENTIK_POSTGRESQL__NAME: ${PG_DB}
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${PG_PASS}
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY}
+      AUTHENTIK_REDIS__HOST: redis
+    volumes:
+      - ./data/authentik/media:/media
+      - ./data/authentik/custom-templates:/templates
+    ports:
+      - "9001:9000"
+
+    networks:
+      - authentik-internal
+    depends_on:
+      authentik_postgresql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  redis:
+    image: docker.io/library/redis:alpine
+    command: --save 60 1 --loglevel warning
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      start_period: 20s
+      interval: 30s
+      retries: 5
+      timeout: 3s
+    volumes:
+      - redis:/data
+    networks:
+      - authentik-internal
+
+  authentik_worker:
+    image: ghcr.io/goauthentik/server:2025.10.3
+    restart: unless-stopped
+    command: worker
+    environment:
+      AUTHENTIK_POSTGRESQL__HOST: authentik_postgresql
+      AUTHENTIK_POSTGRESQL__USER: ${PG_USER}
+      AUTHENTIK_POSTGRESQL__NAME: ${PG_DB}
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${PG_PASS}
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY}
+      AUTHENTIK_REDIS__HOST: redis
+    user: root
+    volumes:
+      - ./data/authentik/media:/media
+      - ./data/authentik/certs:/certs
+      - ./data/authentik/custom-templates:/templates
+    env_file:
+      - .env
+    networks:
+      - authentik-internal
+    depends_on:
+      authentik_postgresql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  authentik_ldap:
+    image: ghcr.io/goauthentik/ldap
+    container_name: authentik_ldap
+    restart: unless-stopped
+    environment:
+      AUTHENTIK_HOST: https://auth.vdlsmc.com
+      AUTHENTIK_INSECURE: "true"
+      AUTHENTIK_TOKEN: ${AUTHENTIK_LDAP_TOKEN}
+    ports:
+      - "9443:9443"
+      - "389:3389"
+      - "636:6636"
+    depends_on:
+      - authentik_server
+
+networks:
+  authentik-internal:
+    driver: bridge
+
+volumes:
+  redis:
+    driver: local

@@ -1,0 +1,34 @@
+---
+# "Glassy" Theme Configuration
+
+title: "VDLSMC Homelab"
+theme: dark              # <--- Must be dark for glass effect to pop
+color: slate             # Neutral color works best
+#headerStyle: clean       # Removes the heavy bar at the top
+
+# The Magic Sauce (Glass Effect)
+background: https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2560 # Example "Tech" wallpaper
+backgroundOpacity: 0.8   # 0.0 = Transparent, 1.0 = Solid (0.6 is the sweet spot)
+cardBlur: lg             # sm, md, lg, or xl (heavier blur = frostier glass)
+
+layout:
+  # The Main Row
+  - Row:
+      # COLUMN 1 (Left Side): Contains both Network groups stacked
+      - Network Services:
+          style: row
+          columns: 1
+
+      - Network Inrastructure:
+          style: row
+          columns: 2
+
+      # COLUMN 2 (Right Side): Virtualization
+      - Virtualization & Containers:
+          style: row
+          columns: 1
+
+      # COLUMN 3 (Right Side): Other Services
+      - Other Services:
+          style: row
+          columns: 1

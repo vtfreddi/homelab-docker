@@ -1,0 +1,30 @@
+---
+# For configuration options and examples, please see:
+# https://gethomepage.dev/configs/info-widgets/
+
+- datetime:
+    text_size: xl
+    format:
+      timeStyle: short
+
+- resources:
+    label: System
+    cpu: true
+    cputemp: true
+    tempmin: 0
+    tempmax: 80
+    memory: true
+    uptime: true
+
+
+- resources:
+    label: Storage
+    disk: /
+
+- resources:
+    label: Network
+    network: true
+
+- search:
+    provider: google
+    target: _blank

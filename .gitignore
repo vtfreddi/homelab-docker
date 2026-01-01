@@ -1,0 +1,50 @@
+# --- SECURITY: SECRETS & PASSWORDS ---
+.env
+**/.env
+**/env/
+**/*.pem
+**/*.key
+**/*.cert
+
+# --- INFRASTRUCTURE: DATABASES & STORAGE ---
+# Never commit the actual database files
+data/
+**/data/
+mysql/
+postgres/
+redis/
+
+# --- NETBOX SPECIFIC ---
+netbox/media/
+netbox/reports/
+netbox/scripts/
+netbox-scanner/netbox-scanner.conf
+
+# --- OS TRASH FILES ---
+.DS_Store
+Thumbs.db
+._*
+
+# --- OPTIONAL: CAREFUL WITH CONFIGS ---
+# If you have specific config files with secrets, list them here:
+config/authentik/certs/
+
+# --- DYNAMIC CONFIGS & SECRETS ---
+# Nginx Proxy Manager (Contains SSL Keys!)
+config/npm/
+
+# AdGuard Home (Contains Runtime Config/Stats)
+config/adguard_conf/
+
+# Secrets
+config/smokeping/smokeping_secrets
+
+# Databases and State
+config/smokeping/Database
+
+# Backups
+config/homepage_config_backup_*/
+
+# Logs
+*.log
+**/logs/*

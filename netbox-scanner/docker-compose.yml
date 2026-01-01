@@ -1,0 +1,12 @@
+
+services:
+  scanner:
+    image: casperklein/netbox-scanner:latest
+    container_name: netbox-scanner
+    network_mode: host  # <--- CRITICAL for scanning multiple LANs
+    volumes:
+      - ./netbox-scanner.conf:/root/.netbox-scanner.conf
+      - ./networks.txt:/netbox-scanner/networks.txt
+    environment:
+      - CRON_SCHEDULE=0 3 * * * # Runs at 3:00 AM daily
+    restart: unless-stopped

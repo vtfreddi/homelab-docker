@@ -1,0 +1,85 @@
+
+services:
+  netbox:
+    image: netboxcommunity/netbox:v3.7
+    container_name: netbox
+    env_file: env/netbox.env
+    user: unit:root
+    volumes:
+      - ./media:/opt/netbox/netbox/media
+    depends_on:
+      - postgres
+      - redis
+      - redis-cache
+    networks:
+      - internal
+      - proxy       # Talks to NPM
+    restart: unless-stopped
+
+  netbox-worker:
+    image: netboxcommunity/netbox:v3.7
+    container_name: netbox-worker
+    command: /opt/netbox/venv/bin/python /opt/netbox/netbox/manage.py rqworker
+    env_file: env/netbox.env
+    user: unit:root
+    depends_on:
+      - netbox
+    networks:
+      - internal
+    restart: unless-stopped
+
+  netbox-housekeeping:
+    image: netboxcommunity/netbox:v3.7
+    container_name: netbox-housekeeping
+    command: /opt/netbox/housekeeping.sh
+    env_file: env/netbox.env
+    user: unit:root
+    depends_on:
+      - netbox
+    networks:
+      - internal
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: netbox-postgres
+    env_file: env/postgres.env
+    volumes:
+      - netbox-postgres-data:/var/lib/postgresql/data
+    networks:
+      - internal
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: netbox-redis
+    command: sh -c 'redis-server --appendonly yes --requirepass $$REDIS_PASSWORD'
+    env_file: env/redis.env
+    volumes:
+      - netbox-redis-data:/data
+    networks:
+      - internal
+    restart: unless-stopped
+
+  redis-cache:
+    image: redis:7-alpine
+    container_name: netbox-redis-cache
+    command: sh -c 'redis-server --appendonly yes --requirepass $$REDIS_PASSWORD'
+    env_file: env/redis-cache.env
+    volumes:
+      - netbox-redis-cache-data:/data
+    networks:
+      - internal
+    restart: unless-stopped
+
+networks:
+  internal:
+    driver: bridge
+  proxy:
+    external: true
+    name: homelab-docker_default
+
+volumes:
+  netbox-postgres-data:
+  netbox-redis-data:
+  netbox-redis-cache-data:

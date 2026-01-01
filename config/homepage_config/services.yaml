@@ -1,0 +1,113 @@
+---
+- Network Services:
+
+    - AdGuard Home:
+        icon: adguard-home.png
+        href: "https://adguard.vdlsmc.com"
+        description: "DNS & Ad Blocking"
+        ping: "https://10.0.20.10:8080"
+        widget:
+          type: adguard
+          url: "http://adguard:8080"
+          username: "{{HOMEPAGE_VAR_ADGUARD_USER}}"
+          password: "{{HOMEPAGE_VAR_ADGUARD_SECRET}}"
+
+    - Nginx Proxy Manager:
+        icon: nginx-proxy-manager.png
+        href: "http://10.0.20.10:81"
+        description: Gateway & SSL
+        ping: "http://10.0.20.10:81"
+        widget:
+          widget:
+          type: npm
+          url: "http://10.0.20.10:81"
+          username: "{{HOMEPAGE_VAR_NPM_USER}}"
+          password: "{{HOMEPAGE_VAR_NPM_SECRET}}"
+
+
+    - Authentik:
+        icon: authentik.png
+        href: "http://auth.vdlsmc.com"
+        description: "Identity & SSO"
+        ping: "http://10.0.20.10:9001"
+        widget:
+          type: authentik
+          url: "http://10.0.20.10:9001"
+          key: "{{HOMEPAGE_VAR_AUTHENTIK_TOKEN}}"
+          version: 2
+
+- Network Infrastructure:
+
+    - Palo Alto Firewall:
+        icon: palo-alto.png
+        href: "https://vdlsmc-fw.vdlsmc.com"
+        description: "Edge Security"
+        ping: "10.0.10.10"
+        label: "Latency"
+
+    - Cisco Core Switch:
+        icon: cisco.png
+        href: "http://vdlsmc-access.vdlsmc.com"
+        description: "Backbone"
+        ping: "10.0.10.15"
+        label: "Latency"
+
+    - Network Graphs:
+        icon: smokeping.png
+        href: "http://10.0.20.10:8095"
+        description: "Uptime History"
+        ping: "http://10.0.20.10:8095"
+
+    - Uptime Kuma:
+        icon: uptime-kuma.png
+        href: "http://status.vdlsmc.com"
+        description: "Uptime Alerts"
+        ping: "http://10.0.20.10:3001"
+
+- Virtualization & Containers:
+    - Proxmox VE:
+        icon: proxmox.png
+        href: "https://10.0.10.30:8006" # Replace with PVE IP
+        description: "Virtualization Cluster"
+        ping: "10.0.10.30"
+        widget:
+          type: proxmox
+          url: "https://10.0.10.30:8006"
+          username: "{{HOMEPAGE_VAR_PVE_USER}}"
+          password: "{{HOMEPAGE_VAR_PVE_TOKEN}}"
+          validate: false
+
+    - Portainer:
+        icon: portainer.png
+        href: "http://portainer.vdlsmc.com"
+        description: "Container Manager"
+        ping: "http://10.0.20.10:9000"
+        widget:
+          type: portainer
+          url: "http://portainer:9000"
+          env: 3
+          key: "{{HOMEPAGE_VAR_PORTAINER_TOKEN}}"
+
+    - Docker Node:
+        widget:
+          type: glances
+          url: http://10.0.20.10:61208
+          version: 3        # Ubuntu repos usually install v3. If it fails, try 4.
+          cputemp: false    # VMs usually don't report temp correctly, set to false
+          uptime: false
+          mem: false
+          disk: false
+
+- Other Services:
+    - Jellyfin:
+        icon: jellyfin.png
+        href: http://172.16.0.21:8096
+        description: Self-hosted Streaming
+        widget:
+          type: jellyfin
+          url: http://172.16.0.21:8096
+          key: {{HOMEPAGE_VAR_JELLYFIN_KEY}}
+          enableBlocks: true
+          enableNowPlaying: true
+          enableUser: true
+          enableMediaControl: true
